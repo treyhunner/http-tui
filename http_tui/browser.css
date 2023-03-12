@@ -1,0 +1,33 @@
+#request-view {
+  height: 3;
+}
+
+#request-view Input {
+  width: 1fr;
+}
+
+#go {
+  width: 5;
+}
+
+#response-view > Static {
+  border: solid blue;
+}
+
+#response-container {
+  layout: grid;
+  grid-size: 1;
+  grid-rows: 1fr 2fr;
+}
+
+#header-view {
+  height: 100%;
+  overflow: auto scroll;
+  border: solid blue;
+}
+
+#content-view {
+  height: 100%;
+  overflow: auto scroll;
+  border: solid blue;
+}
