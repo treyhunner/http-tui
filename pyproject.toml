@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "http-tui"
-description = ''
+description = 'Perform HTTP requests in a somewhat friendly TUI'
 readme = "README.md"
 requires-python = ">=3.7"
 license = "MIT"
@@ -30,9 +30,9 @@ dependencies = [
 dynamic = ["version"]
 
 [project.urls]
-Documentation = "https://github.com/unknown/http-tui#readme"
-Issues = "https://github.com/unknown/http-tui/issues"
-Source = "https://github.com/unknown/http-tui"
+Documentation = "https://github.com/treyhunner/http-tui#readme"
+Issues = "https://github.com/treyhunner/http-tui/issues"
+Source = "https://github.com/treyhunner/http-tui"
 
 [project.scripts]
 http = "http_tui.__main__:main"

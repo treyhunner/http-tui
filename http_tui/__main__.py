@@ -81,6 +81,10 @@ class HTTPApp(App[str]):
         self.submit()
 
 
-if __name__ == "__main__":
+def main():
     app = HTTPApp()
     app.run()
+
+
+if __name__ == "__main__":
+    main()
