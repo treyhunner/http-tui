@@ -49,6 +49,9 @@ dependencies = [
 cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=http_tui --cov=tests {args}"
 no-cov = "cov --no-cov {args}"
 
+[tool.hatch.build.targets.wheel.force-include]
+"http_tui/app.css" = "http_tui/app.css"
+
 [[tool.hatch.envs.test.matrix]]
 python = ["37", "38", "39", "310", "311"]
 
@@ -65,3 +68,6 @@ exclude_lines = [
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
 ]
+
+[tool.black]
+line-length = 80

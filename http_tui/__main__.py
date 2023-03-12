@@ -1,13 +1,14 @@
 import json
+
 import requests
+from rich.markup import escape
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal, Vertical
-from textual.widgets import Label, Button, Header, Footer, Input, RadioButton, RadioSet, Static
+from textual.widgets import Button, Header, Input, RadioButton, RadioSet, Static
 
 
 class HTTPApp(App[str]):
-
-    CSS_PATH = "browser.css"
+    CSS_PATH = "app.css"
     TITLE = "HTTP Client"
     dark = False
 
@@ -33,7 +34,11 @@ class HTTPApp(App[str]):
                     with Vertical(id="header-view"):
                         yield Static(self.HEADERS_TEXT, id="headers")
                     with Vertical(id="content-view"):
-                        yield Static(self.CONTENT_TEXT, id="content", expand=True)
+                        yield Static(
+                            self.CONTENT_TEXT,
+                            id="content",
+                            expand=True,
+                        )
 
     def on_mount(self) -> None:
         self.method = "GET"
@@ -44,7 +49,7 @@ class HTTPApp(App[str]):
 
     def update_headers(self, headers):
         header_text = "\n".join(
-            f"[b]{header}[/b]: {value}"
+            f"[b]{header}[/b]: {escape(value)}"
             for header, value in headers.items()
         )
         self.query_one("#headers", Static).update(header_text)
@@ -65,14 +70,15 @@ class HTTPApp(App[str]):
             return self.handle_error(e)
         self.query_one("#request_line", Static).update(f"{self.method} {url}")
         self.update_headers(response.headers)
+        status_line = f"{response.status_code} {response.reason}"
         self.query_one("#status", Static).update(
-            f"{response.status_code} {response.reason}"
+            ("[green]" if response.ok else "[red]") + f"{status_line}[/]"
         )
-        if response.headers.get('Content-Type').startswith('application/json'):
+        if response.headers.get("Content-Type").startswith("application/json"):
             response_text = json.dumps(response.json(), indent=2)
         else:
             response_text = response.text
-        self.query_one("#content", Static).update(response_text)
+        self.query_one("#content", Static).update(escape(response_text))
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         self.submit()
