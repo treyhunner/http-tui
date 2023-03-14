@@ -6,6 +6,14 @@
   width: 1fr;
 }
 
+#request-body-view {
+  height: 5;
+}
+
+#request-body-view.hidden {
+  display:none;
+}
+
 #go {
   width: 5;
 }
