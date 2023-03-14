@@ -1,4 +1,6 @@
 import json
+from typing import Dict
+from urllib import parse
 
 import requests
 from rich.markup import escape
@@ -22,11 +24,17 @@ class HTTPApp(App[str]):
         with Container():
             with Vertical(id="request-view"):
                 with Horizontal():
-                    with RadioSet():
+                    with RadioSet(id="method"):
                         yield RadioButton("GET", value=True)
                         yield RadioButton("POST")
-                    yield Input(placeholder="URL", id="url")
+                    yield Input(placeholder="URL", id="url", value="https://example.com")
                     yield Button("GO", id="go", variant="primary")
+            with Vertical(id="request-body-view", classes='hidden'):
+                with Horizontal():
+                    with RadioSet(id="content-type"):
+                        yield RadioButton("application/x-www-form-urlencoded", value=True)
+                        yield RadioButton("application/json")
+                    yield Input(placeholder="Request Body", id="request-body")
             with Vertical(id="response-view"):
                 yield Static(self.REQUEST_TEXT, id="request_line")
                 yield Static(self.STATUS_TEXT, id="status")
@@ -43,9 +51,19 @@ class HTTPApp(App[str]):
     def on_mount(self) -> None:
         self.method = "GET"
         self.query_one("#url", Input).focus()
+        self.content_type = ""
 
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
-        self.method = f"{event.pressed.label}"
+        if (event.radio_set.id == 'method'):
+            self.method = f"{event.pressed.label}"
+        if event.radio_set.id == 'content-type':
+            self.content_type = f"{event.pressed.label}"
+
+        body_view = self.query_one("#request-body-view")
+        if self.method == 'POST':
+            body_view.remove_class('hidden')
+        else:
+            body_view.add_class('hidden')
 
     def update_headers(self, headers):
         header_text = "\n".join(
@@ -64,10 +82,23 @@ class HTTPApp(App[str]):
 
     def submit(self):
         url = self.query_one("#url", Input).value
+        headers = {}
+        params = {}
+        body = self.get_request_body()
+
+        if self.method == "POST":
+            if self.content_type:
+                headers["content-type"] = self.content_type
+
+            if self.content_type == "application/json":
+                params['json'] = body
+            else:
+                params['data'] = body
         try:
-            response = requests.request(self.method, url)
+            response = requests.request(self.method, url, headers=headers, **params)
         except requests.RequestException as e:
             return self.handle_error(e)
+
         self.query_one("#request_line", Static).update(f"{self.method} {url}")
         self.update_headers(response.headers)
         status_line = f"{response.status_code} {response.reason}"
@@ -85,6 +116,15 @@ class HTTPApp(App[str]):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         self.submit()
+
+    def get_request_body(self) -> Dict:
+        body = self.query_one("#request-body").value
+        if not len(body):
+            return {}
+        try:
+            return json.loads(body)
+        except ValueError:
+            return parse.parse_qs(body)
 
 
 def main():
