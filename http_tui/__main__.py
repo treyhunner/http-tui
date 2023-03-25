@@ -19,6 +19,11 @@ class HTTPApp(App[str]):
     HEADERS_TEXT = "[b]Headers[/b]"
     CONTENT_TEXT = "[b]Response Content[/b]"
 
+    def __init__(self, *args, **kwargs) -> None:
+        self.method = "GET"
+        self.content_type = ""
+        super().__init__(*args, **kwargs)
+
     def compose(self) -> ComposeResult:
         yield Header()
         with Container():
@@ -27,12 +32,15 @@ class HTTPApp(App[str]):
                     with RadioSet(id="method"):
                         yield RadioButton("GET", value=True)
                         yield RadioButton("POST")
-                    yield Input(placeholder="URL", id="url", value="https://example.com")
+                    yield Input(placeholder="URL", id="url")
                     yield Button("GO", id="go", variant="primary")
-            with Vertical(id="request-body-view", classes='hidden'):
+            with Vertical(id="request-body-view", classes="hidden"):
                 with Horizontal():
                     with RadioSet(id="content-type"):
-                        yield RadioButton("application/x-www-form-urlencoded", value=True)
+                        yield RadioButton(
+                            "application/x-www-form-urlencoded",
+                            value=True,
+                        )
                         yield RadioButton("application/json")
                     yield Input(placeholder="Request Body", id="request-body")
             with Vertical(id="response-view"):
@@ -49,21 +57,19 @@ class HTTPApp(App[str]):
                         )
 
     def on_mount(self) -> None:
-        self.method = "GET"
         self.query_one("#url", Input).focus()
-        self.content_type = ""
 
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
-        if (event.radio_set.id == 'method'):
+        if event.radio_set.id == "method":
             self.method = f"{event.pressed.label}"
-        if event.radio_set.id == 'content-type':
+        if event.radio_set.id == "content-type":
             self.content_type = f"{event.pressed.label}"
 
         body_view = self.query_one("#request-body-view")
-        if self.method == 'POST':
-            body_view.remove_class('hidden')
+        if self.method == "POST":
+            body_view.remove_class("hidden")
         else:
-            body_view.add_class('hidden')
+            body_view.add_class("hidden")
 
     def update_headers(self, headers):
         header_text = "\n".join(
@@ -91,13 +97,16 @@ class HTTPApp(App[str]):
                 headers["content-type"] = self.content_type
 
             if self.content_type == "application/json":
-                params['json'] = body
+                params["json"] = body
             else:
-                params['data'] = body
+                params["data"] = body
         try:
-            response = requests.request(self.method, url, headers=headers, **params)
+            response = requests.request(
+                self.method, url, headers=headers, **params
+            )
         except requests.RequestException as e:
-            return self.handle_error(e)
+            self.handle_error(e)
+            return
 
         self.query_one("#request_line", Static).update(f"{self.method} {url}")
         self.update_headers(response.headers)
@@ -119,7 +128,7 @@ class HTTPApp(App[str]):
 
     def get_request_body(self) -> Dict:
         body = self.query_one("#request-body").value
-        if not len(body):
+        if not body:
             return {}
         try:
             return json.loads(body)
