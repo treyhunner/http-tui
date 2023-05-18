@@ -4,14 +4,24 @@ from urllib import parse
 
 import requests
 from rich.markup import escape
+from textual import on
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal, Vertical
-from textual.widgets import Button, Header, Input, RadioButton, RadioSet, Static
+from textual.widgets import (
+    Button,
+    Header,
+    Input,
+    RadioButton,
+    RadioSet,
+    Select,
+    Static,
+)
 
 
 class HTTPApp(App[str]):
     CSS_PATH = "app.css"
     TITLE = "HTTP Client"
+    HTTP_METHODS = ["GET", "POST", "DELETE"]
     dark = False
 
     REQUEST_TEXT = "[b]Request Line[/b]"
@@ -29,9 +39,11 @@ class HTTPApp(App[str]):
         with Container():
             with Vertical(id="request-view"):
                 with Horizontal():
-                    with RadioSet(id="method"):
-                        yield RadioButton("GET", value=True)
-                        yield RadioButton("POST")
+                    yield Select(
+                        [(method, method) for method in self.HTTP_METHODS],
+                        value=self.HTTP_METHODS[0],
+                        allow_blank=False,
+                    )
                     yield Input(placeholder="URL", id="url")
                     yield Button("GO", id="go", variant="primary")
             with Vertical(id="request-body-view", classes="hidden"):
@@ -59,17 +71,19 @@ class HTTPApp(App[str]):
     def on_mount(self) -> None:
         self.query_one("#url", Input).focus()
 
-    def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
-        if event.radio_set.id == "method":
-            self.method = f"{event.pressed.label}"
-        if event.radio_set.id == "content-type":
-            self.content_type = f"{event.pressed.label}"
+    @on(Select.Changed)
+    def select_changed(self, event: Select.Changed) -> None:
+        self.method = str(event.value)
 
         body_view = self.query_one("#request-body-view")
         if self.method == "POST":
             body_view.remove_class("hidden")
         else:
             body_view.add_class("hidden")
+
+    def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
+        if event.radio_set.id == "content-type":
+            self.content_type = f"{event.pressed.label}"
 
     def update_headers(self, headers):
         header_text = "\n".join(
