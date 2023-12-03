@@ -43,6 +43,7 @@ class HTTPApp(App[str]):
                         [(method, method) for method in self.HTTP_METHODS],
                         value=self.HTTP_METHODS[0],
                         allow_blank=False,
+                        id="method",
                     )
                     yield Input(placeholder="URL", id="url")
                     yield Button("GO", id="go", variant="primary")
@@ -81,7 +82,8 @@ class HTTPApp(App[str]):
         else:
             body_view.add_class("hidden")
 
-    def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
+    @on(RadioSet.Changed, "#content-type")
+    def radio_set_changed(self, event: RadioSet.Changed) -> None:
         if event.radio_set.id == "content-type":
             self.content_type = f"{event.pressed.label}"
 
@@ -134,10 +136,9 @@ class HTTPApp(App[str]):
             response_text = response.text
         self.query_one("#content", Static).update(escape(response_text))
 
-    def on_input_submitted(self, event: Input.Submitted) -> None:
-        self.submit()
-
-    def on_button_pressed(self, event: Button.Pressed) -> None:
+    @on(Input.Submitted, "#url")
+    @on(Button.Pressed, "#go")
+    def submit_event(self, event: Input.Submitted | Button.Pressed) -> None:
         self.submit()
 
     def get_request_body(self) -> Dict:
